@@ -29,6 +29,15 @@ estos pasos. Lo que NO está acá (el motor) no se toca; solo se rellenan los ga
 - [ ] Decidí si el repo es público o **privado** (si maneja algo sensible → privado).
 - [ ] Generá un **PAT fine-grained de alcance mínimo**: solo este repo, `Contents: Read and write`,
       con expiración. Rotable. Nunca subas secretos al repo — solo su índice.
+- [ ] El artefacto ya está: `docs/INVENTARIO-CREDENCIALES.md` (mapa punteros-only). Sembralo con
+      tus credenciales — puntero (ubicación + nombre de variable), NUNCA el valor. Cada frente
+      reporta el puntero de lo suyo; el orquestador mantiene el mapa.
+
+## 5b. Celda de conocimiento (opcional)
+- [ ] Si tu proyecto maneja conocimiento recuperable (dominio grande, docs, historial a indexar),
+      usá `knowledge/kcell.py`: copiá `cell.json.example` → `cell.json`, poné tus `chunks.jsonl`,
+      y consultá con `map` / `lookup` / `search`. El motor es git + disciplina; kcell es una
+      herramienta opcional ya probada. Ver `knowledge/README.md`.
 
 ## 6. Arranque
 - [ ] Completá los huecos `[...]` en `prompts/PROMPT-ORQUESTADOR.md` y `prompts/PROMPT-ANALIZADOR-INICIAL.md`.

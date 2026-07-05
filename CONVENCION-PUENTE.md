@@ -43,6 +43,32 @@ El repo ES la memoria del proyecto.
 - Listá acá cuáles aplican a tu dominio (ej: publicar, desplegar a prod, contactar a alguien,
   borrar datos, gastar dinero).
 
+## Observar, no adivinar — regla dura
+- Se diagnostica REPRODUCIENDO o MIDIENDO, no suponiendo. Se verifica contra la fuente real
+  (el código, el log, el config, el dato) ANTES de afirmar.
+- Todo lo que se trae de AFUERA del proyecto (docs externas, foros, otro repo) se marca con su
+  nivel de verificación: `verificado` / `inferido` / `sin-verificar`. Un supuesto no se mezcla
+  con un hecho.
+
+## Criterio sobre obediencia — regla dura
+- Un ejecutor FRENA antes de romper (frenazo) y marca el riesgo, en vez de ejecutar ciego.
+- Si una orden parece que va a romper algo, o no es segura, se detiene y se avisa al
+  orquestador — no se ejecuta y se rompe. El criterio genuino se valora sobre el cumplimiento
+  literal.
+- Distinto de los Gates: los Gates dicen QUÉ acciones esperan OK; esta regla es sobre CÓMO se
+  comporta un ejecutor ante cualquier orden.
+
+## Recurso compartido = un turno a la vez — regla dura
+- Si varias sesiones comparten un recurso MUTABLE (Docker, una base de datos, un working tree,
+  un archivo de estado), solo UNA lo toca a la vez. El orquestador secuencia los turnos.
+- Verificá que el recurso esté libre antes de tomarlo (no asumas). Soltalo al terminar.
+
+## Secretos — regla dura
+- El puente es un repo git: NUNCA va el VALOR de un secreto, solo su PUNTERO.
+- El mapa de credenciales vive en `docs/INVENTARIO-CREDENCIALES.md` (punteros-only); los
+  valores viven en un gestor de secretos o el `.env` server-side. Los handoffs de secretos
+  van FUERA DE BANDA, no por el puente.
+
 ## Doctrina de arranque
 - Pilotar chico y crecer. No sobre-diseñar antes de necesitarlo.
 - Cada sesión, al abrir, lee su ROL + este archivo + el PLAN -> queda al día.

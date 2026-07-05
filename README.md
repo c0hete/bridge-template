@@ -4,7 +4,9 @@ Plantilla mínima de un **puente**: un hub de coordinación en **topología estr
 para trabajar un proyecto con múltiples sesiones de IA especializadas, manteniendo
 el **contexto recuperable entre sesiones**. El repo ES la memoria del proyecto.
 
-No inventa herramientas nuevas: usa **git** + una disciplina simple. Esa es la idea.
+No inventa herramientas por inventar: arranca con **git + una disciplina simple**, y suma
+herramientas propias solo cuando su utilidad está probada (la primera: `kcell`, la celda de
+conocimiento). Esa es la idea — evolución lenta y verificada, no sobre-diseño.
 
 ## Cómo se usa
 1. Apretá **"Use this template"** (arriba) → creás tu propio repo a partir de esta base.
@@ -17,6 +19,8 @@ No inventa herramientas nuevas: usa **git** + una disciplina simple. Esa es la i
 - `roles/` — ROL-ORQUESTADOR (coordina), ROL-EJECUTOR (plantilla base), ROL-ANALIZADOR-INICIAL (arranque de un solo uso).
 - `mailbox/` — `to-orquestador.md` (ejecutores → orquestador) y `to-ejecutores.md` (orquestador → ejecutores). Append-only.
 - `docs/PLAN.md` — la fuente única de verdad del estado.
+- `docs/INVENTARIO-CREDENCIALES.md` — mapa de credenciales (punteros-only; el valor nunca acá).
+- `knowledge/kcell.py` — celda de conocimiento recuperable (opcional; ver `knowledge/README.md`).
 - `prompts/` — plantillas de arranque de cada sesión.
 
 ## Filosofía
