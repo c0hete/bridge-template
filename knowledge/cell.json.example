@@ -1,13 +1,13 @@
 {
   "tool": "kc",
-  "cell": "NOMBRE-DE-TU-CELDA",
-  "description": "Celda de conocimiento recuperable de este dominio.",
+  "cell": "YOUR-CELL-NAME",
+  "description": "Recoverable knowledge cell for this domain.",
   "artifacts_dir": "artifacts",
   "index_file": "kc-index.json",
   "chunks_file": "chunks.jsonl",
   "core_flag": "core",
   "core_flag_cli": "core",
   "domain_maps": {
-    "ejemplo-dominio": ["mapa-ejemplo.md", "CONTRATOS-ejemplo.md"]
+    "example-domain": ["map-example.md", "CONTRACTS-example.md"]
   }
 }

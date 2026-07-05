@@ -1,18 +1,18 @@
-# PLAN — [NOMBRE DEL PROYECTO]   (FUENTE ÚNICA DE VERDAD)
+# PLAN — [PROJECT NAME]   (SINGLE SOURCE OF TRUTH)
 
-## Objetivo del proyecto
-(Qué se busca lograr. Una línea clara.)
+## Project goal
+(What you're trying to achieve. One clear line.)
 
-## Estado actual
-(Dónde estamos hoy. Lo mantiene el ORQUESTADOR al día.)
+## Current state
+(Where we are today. The ORCHESTRATOR keeps this current.)
 
-## Frentes abiertos
-| Frente | Rol | Estado | Próximo paso |
-|--------|-----|--------|--------------|
-| (vacío hasta la descomposición inicial) | | | |
+## Open fronts
+| Front | Role | State | Next step |
+|-------|------|-------|-----------|
+| (empty until the initial breakdown) | | | |
 
-## Decisiones pendientes [HUMANO]
-- (ninguna aún)
+## Pending decisions [HUMAN]
+- (none yet)
 
-## Cronología del proyecto (meta)
-- AAAA-MM-DD: repo creado desde bridge-template, esqueleto sembrado.
+## Project timeline (meta)
+- YYYY-MM-DD: repo created from bridge-template, skeleton seeded.

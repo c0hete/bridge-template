@@ -1,23 +1,22 @@
-# knowledge/ — celda de conocimiento recuperable (kcell)
+# knowledge/ — recoverable knowledge cell (kcell)
 
-`kcell.py` es el **core común de las celdas de conocimiento**: un sistema de 2 capas,
-sin dependencias (stdlib), local-first.
+`kcell.py` is the **shared core of the knowledge cells**: a 2-layer system, with no
+dependencies (stdlib), local-first.
 
-- **Capa 1 (map)** → emite el mapa base + contratos de un dominio (contexto inyectable a una sesión).
-- **Capa 2 (search)** → retrieval léxico BM25-lite sobre *chunks*, con boost a la línea `PREGUNTAS`.
-- **lookup** → ficha exacta por nombre (O(1) sobre un índice `by_name`).
+- **Layer 1 (map)** -> emits the base map + contracts of a domain (context you can inject into a session).
+- **Layer 2 (search)** -> BM25-lite lexical retrieval over *chunks*, with a boost to the `QUESTIONS` line.
+- **lookup** -> exact record by name (O(1) over a `by_name` index).
 
-## Por qué está acá
-La premisa original del puente era "solo git + disciplina, sin herramientas". Esa premisa
-era del arranque, para no sobre-construir antes de saber si servía. La utilidad de kcell
-está probada → se adopta. **El motor sigue siendo git + disciplina; kcell es una herramienta
-opcional para proyectos con conocimiento recuperable** (y la base sobre la que se construye
-la capa de memoria/índice).
+## Why it's here
+The bridge's original premise was "just git + discipline, no tools". That premise was from the
+start, to avoid over-building before we knew it was useful. kcell's usefulness is proven -> it
+gets adopted. **The engine is still git + discipline; kcell is an optional tool for projects
+with recoverable knowledge** (and the base the memory/index layer is built on).
 
-## Cómo se usa
-1. Copiá `cell.json.example` → `cell.json` y completá los campos de tu dominio.
-2. Poné tus `chunks.jsonl` (un chunk por línea) en el `artifacts_dir`.
-3. Corré `python kcell.py map` / `lookup <nombre>` / `search "<consulta>"`.
+## How to use it
+1. Copy `cell.json.example` -> `cell.json` and fill in your domain's fields.
+2. Put your `chunks.jsonl` (one chunk per line) in the `artifacts_dir`.
+3. Run `python kcell.py map` / `lookup <name>` / `search "<query>"`.
 
-Cada celda es un `cell.json` + sus artefactos; el `kcell.py` es el mismo para todas.
-No se toca el motor: se configura por `cell.json`.
+Each cell is a `cell.json` + its artifacts; `kcell.py` is the same for all of them.
+You don't touch the engine: you configure it via `cell.json`.
