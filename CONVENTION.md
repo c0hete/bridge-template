@@ -19,7 +19,11 @@ sessions, keeping context recoverable across sessions. The repo IS the project's
   `[FROM]`  (signature at the close)
 
 ## Operational integrity — hard rule (commit=push)
-- Every action on the repo: `git pull --rebase -q` -> `commit` -> `push`, atomic.
+- Every change is ONE atomic cycle, IN THIS ORDER:
+  `git add -A && git commit -m "..."`  ->  `git pull --rebase`  ->  `git push`.
+- COMMIT BEFORE YOU PULL. `git pull --rebase` with unstaged changes fails ("cannot pull with
+  rebase: you have unstaged changes"). Commit your work first, rebase it on top of the remote,
+  then push. Pulling first only works when the tree is already clean.
 - If it isn't pushed, it doesn't exist. Local work left unpushed STALLS the whole star
   without anyone knowing why. That's why it's a hard rule, not a suggestion.
 
@@ -55,6 +59,11 @@ sessions, keeping context recoverable across sessions. The repo IS the project's
 - The credential map lives in `docs/CREDENTIALS-INVENTORY.md` (pointers only); the values live
   in a secrets manager or the server-side `.env`. Secret handoffs happen OUT OF BAND, not
   through the bridge.
+- A PAT/token is stored ONLY via the wake-up script's hidden input. NEVER write `.env` with the
+  token value in a visible command, never paste it into a file inline, never print it. Never
+  embed it in a remote URL; use a credential helper, or if you must embed it for one clone, scrub
+  it immediately with `git remote set-url origin <clean-url>`. The value must never appear in
+  command output, a transcript, or a committed file.
 
 ## Domain integrity — hard rule   [FILL IN ON FORK]
 > Every domain has ONE integrity rule that isn't up for negotiation. Write yours here.
