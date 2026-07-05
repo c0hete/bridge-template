@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-kcell.py — core comun de las celdas de conocimiento del proyecto (patron estrangulador).
+kcell.py — shared core of the project's knowledge cells (strangler pattern).
 
-Una celda de conocimiento (ALE, AzerothCore, ...) es el MISMO sistema de 2 capas:
-  Capa 1 (map)    -> emite mapa base + contratos de un dominio (contexto inyectable).
-  Capa 2 (search) -> retrieval lexico BM25-lite sobre chunks, boost a la linea PREGUNTAS.
-  lookup          -> ficha exacta por nombre (O(1) sobre un indice by_name).
+A knowledge cell (ALE, AzerothCore, ...) is the SAME 2-layer system:
+  Layer 1 (map)    -> emits a domain's base map + contracts (injectable context).
+  Layer 2 (search) -> BM25-lite lexical retrieval over chunks, boosting the QUESTIONS line.
+  lookup           -> exact record by name (O(1) over a by_name index).
 
-Historicamente cada celda tenia su tool duplicada (ale.py, acw.py) con ~80% identico. Este
-modulo extrae ese core; cada tool queda como thin wrapper que instancia KnowledgeCell con su
-`cell.json`. Sin dependencias (stdlib), local-first, contrato del toolkit (describe/summary,
+Historically each cell had its own duplicated tool (ale.py, acw.py) ~80% identical. This
+module extracts that core; each tool becomes a thin wrapper that instantiates KnowledgeCell
+with its `cell.json`. No dependencies (stdlib), local-first, toolkit contract (describe/summary,
 exit 0/1/2).
 
-`cell.json` (junto a la tool de cada celda) declara lo que difiere entre celdas:
+`cell.json` (next to each cell's tool) declares what differs between cells:
   {
     "tool": "acw",
     "cell": "azerothcore",
@@ -21,17 +21,17 @@ exit 0/1/2).
     "artifacts_dir": "artifacts",
     "index_file": "acw-index.json",
     "chunks_file": "chunks.jsonl",
-    "core_flag": "gm_core",            # campo booleano de metadata que marca el nucleo del dominio
-    "core_flag_cli": "gm-core",        # nombre del flag CLI (--gm-core)
-    "domain_maps": {                   # dominios con Capa 1 curada -> (mapa, contratos)
-      "cuentas-gm": ["mapa-cuentas-gm.md", "CONTRATOS-CUENTAS-GM.md"]
+    "core_flag": "gm_core",            # boolean metadata field marking the domain's core
+    "core_flag_cli": "gm-core",        # CLI flag name (--gm-core)
+    "domain_maps": {                   # domains with a curated Layer 1 -> (map, contracts)
+      "gm-accounts": ["map-gm-accounts.md", "CONTRACTS-GM-ACCOUNTS.md"]
     }
   }
 
-NOTA (paridad): la celda ALE (ale.py / eluna-index.json) NO migra a kcell hasta que una
-pasada de paridad demuestre output identico (diff de map/lookup/search sobre casos reales).
-Su indice usa methods/hooks (no by_name) y un lookup rico; ese modo se agrega como override
-cuando se migre, con OK del orquestador. Por ahora kcell sirve a las celdas de indice by_name.
+NOTE (parity): the ALE cell (ale.py / eluna-index.json) does NOT migrate to kcell until a
+parity pass proves identical output (diff of map/lookup/search over real cases). Its index
+uses methods/hooks (not by_name) and a rich lookup; that mode is added as an override when it
+migrates, with the orchestrator's OK. For now kcell serves the by_name-index cells.
 """
 import os
 import re
@@ -44,8 +44,8 @@ from collections import Counter
 VERSION = "1.0.0"
 SCHEMA_VERSION = 1
 
-# El contenido emite markdown con simbolos UTF-8; en Windows el stdout arranca en cp1252 y
-# rompe con UnicodeEncodeError. Forzamos UTF-8 para que map/lookup/search sean seguros.
+# The content emits markdown with UTF-8 symbols; on Windows stdout starts in cp1252 and breaks
+# with UnicodeEncodeError. We force UTF-8 so map/lookup/search are safe.
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -55,9 +55,9 @@ except (AttributeError, ValueError):
 
 _TOKEN = re.compile(r"[a-z0-9_]+")
 
-# Palabras vacias (es/en) que solo aportan ruido al ranking: un chunk corto sin ningun termino
-# de contenido puede ganar por su alto TF-relativo de stopwords. Se excluyen de la QUERY (no del
-# indexado de los chunks) -> las queries tecnicas de ALE (sin stopwords) quedan intactas.
+# Stop words (es/en) that only add noise to ranking: a short chunk with no content term can win
+# on its high relative TF of stopwords. They're excluded from the QUERY (not from chunk indexing)
+# -> technical queries (without stopwords) stay intact.
 _STOP = frozenset("""
 a al ante bajo con contra de del desde donde durante e el en entre es esta este esto hacia hasta
 la las le les lo los mas me mi mis no nos o para pero por porque que se si sin sobre su sus te
@@ -71,13 +71,13 @@ def _tokens(text):
 
 
 def _query_tokens(text):
-    """Tokens de la query sin stopwords; si todo era stopword, cae a los tokens crudos."""
+    """Query tokens without stopwords; if everything was a stopword, fall back to raw tokens."""
     toks = [t for t in _tokens(text) if t not in _STOP]
     return toks or _tokens(text)
 
 
 def _split_chunk(text):
-    """Separa el cuerpo del chunk de su linea PREGUNTAS (para poder darle boost)."""
+    """Split the chunk body from its QUESTIONS line (so it can be boosted)."""
     m = re.search(r"\nPREGUNTAS:\s*(.*)$", text, re.S)
     preguntas = m.group(1) if m else ""
     body = text[:m.start()] if m else text
@@ -85,7 +85,7 @@ def _split_chunk(text):
 
 
 class KnowledgeCell:
-    """Una celda de conocimiento parametrizada por su cell.json. `base` = dir de la tool."""
+    """A knowledge cell parameterized by its cell.json. `base` = the tool's dir."""
 
     def __init__(self, config, base):
         self.cfg = config
@@ -93,10 +93,10 @@ class KnowledgeCell:
         self.art = os.path.join(base, config.get("artifacts_dir", "artifacts"))
         self.index_path = os.path.join(self.art, config["index_file"])
         self.chunks_path = os.path.join(self.art, config["chunks_file"])
-        self.core_flag = config.get("core_flag")            # p.ej. "gm_core"
+        self.core_flag = config.get("core_flag")            # e.g. "gm_core"
         self.domain_maps = config.get("domain_maps", {})
 
-    # ------------------------- carga -------------------------
+    # ------------------------- load -------------------------
 
     def load_index(self):
         with open(self.index_path, encoding="utf-8") as f:
@@ -123,13 +123,13 @@ class KnowledgeCell:
             "description": self.cfg["description"],
             "commands": [
                 {"name": "map", "args": [f"--domain {next(iter(self.domain_maps), 'DOMAIN')}"],
-                 "description": "Emit Capa 1 base context (mapa + contratos) for a domain",
+                 "description": "Emit Layer 1 base context (map + contracts) for a domain",
                  "token_cost_estimate": "medium"},
                 {"name": "lookup", "args": ["NAME"],
                  "description": "Exact card by name (command / table / procedure / method)",
                  "token_cost_estimate": "low"},
                 {"name": "search", "args": ["QUERY", "--category C", f"--{cli}", "--gotcha", "--k N"],
-                 "description": "Lexical retrieval over chunks (Capa 2), boosts PREGUNTAS synonyms",
+                 "description": "Lexical retrieval over chunks (Layer 2), boosts QUESTIONS synonyms",
                  "token_cost_estimate": "low"},
             ],
             "outputs": ["stdout"],
@@ -145,13 +145,13 @@ class KnowledgeCell:
             idx = self.load_index()
             chunks = self.load_chunks()
         except FileNotFoundError as e:
-            self._err(f"artefacto faltante: {e}")
+            self._err(f"missing artifact: {e}")
             return 1
         meta = idx.get("_meta", {})
         core = sum(1 for c in chunks if self.core_flag and c["metadata"].get(self.core_flag))
         gotcha = sum(1 for c in chunks if c["metadata"].get("has_gotcha"))
         cats = Counter(c["metadata"]["category"] for c in chunks)
-        # nombre "bonito" para el resumen humano; cae al _meta.cell / cfg.cell
+        # "pretty" name for the human summary; falls back to _meta.cell / cfg.cell
         display = self.cfg.get("cell_display", meta.get("cell", self.cfg.get("cell")))
         s = {
             "tool": self.cfg["tool"],
@@ -166,37 +166,37 @@ class KnowledgeCell:
             "with_gotcha": gotcha,
             "categories": dict(cats),
         }
-        # cuenta del nucleo bajo su nombre real (gm_core/econ_core) para no romper consumidores
+        # core count under its real name (gm_core/econ_core) so consumers don't break
         if self.core_flag:
             s[self.core_flag] = core
         if as_json:
             print(json.dumps(s, ensure_ascii=False, indent=2))
         else:
-            print(f"{self.cfg['tool']} {VERSION} | {display} {s['wow_version']} | dominios: "
+            print(f"{self.cfg['tool']} {VERSION} | {display} {s['wow_version']} | domains: "
                   f"{', '.join(s['domains_enriched'])} | {s['chunks']} chunks "
                   f"({s['commands']} cmd, {s['tables']} tbl, {s['procedures']} proc, {gotcha} gotcha)")
         return 0
 
-    # ------------------------- map (Capa 1) -------------------------
+    # ------------------------- map (Layer 1) -------------------------
 
     def cmd_map(self, domain):
         if domain not in self.domain_maps:
-            self._err(f"dominio '{domain}' sin capa 1 curada todavía. "
-                      f"Disponibles: {', '.join(self.domain_maps) or '(ninguno)'} "
-                      f"(ver PROCEDIMIENTO-ENRIQUECIMIENTO.md).")
+            self._err(f"domain '{domain}' has no curated layer 1 yet. "
+                      f"Available: {', '.join(self.domain_maps) or '(none)'} "
+                      f"(see ENRICHMENT-PROCEDURE.md).")
             return 2
         parts = []
         for fname in self.domain_maps[domain]:
             p = os.path.join(self.art, fname)
             if not os.path.exists(p):
-                self._err(f"falta {p}")
+                self._err(f"missing {p}")
                 return 1
             with open(p, encoding="utf-8") as f:
                 parts.append(f.read())
         print("\n\n---\n\n".join(parts))
         return 0
 
-    # ------------------------- lookup (index by_name) -------------------------
+    # ------------------------- lookup (by_name index) -------------------------
 
     def cmd_lookup(self, name, as_json):
         idx = self.load_index()
@@ -212,10 +212,10 @@ class KnowledgeCell:
                 print(c["text"])
             return 0
         cand = [n for n in idx.get("by_name", {}) if key in n][:8]
-        self._err(f"'{name}' no encontrado." + (f" ¿Quisiste?: {', '.join(cand)}" if cand else ""))
+        self._err(f"'{name}' not found." + (f" Did you mean: {', '.join(cand)}" if cand else ""))
         return 1
 
-    # ------------------------- search (Capa 2 lexica) -------------------------
+    # ------------------------- search (Layer 2, lexical) -------------------------
 
     def cmd_search(self, query, category, core, gotcha, k, as_json):
         chunks = self.load_chunks()
@@ -232,12 +232,12 @@ class KnowledgeCell:
 
         pool = [c for c in chunks if keep(c)]
         if not pool:
-            self._err("ningun chunk pasa el filtro")
+            self._err("no chunk passes the filter")
             return 1
 
         q = _query_tokens(query)
         if not q:
-            self._err("query vacia")
+            self._err("empty query")
             return 2
 
         N = len(pool)
@@ -247,7 +247,7 @@ class KnowledgeCell:
             body, preg = _split_chunk(c["text"])
             tf = Counter(_tokens(body))
             for t, n in Counter(_tokens(preg)).items():
-                tf[t] += n * 3           # boost a los sinonimos de intencion (PREGUNTAS)
+                tf[t] += n * 3           # boost the intent synonyms (QUESTIONS)
             docs.append(tf)
             for t in tf:
                 df[t] += 1
@@ -272,7 +272,7 @@ class KnowledgeCell:
         top = scored[:k]
 
         if not top:
-            self._err("sin resultados")
+            self._err("no results")
             return 1
         if as_json:
             print(json.dumps([{"score": round(s, 4), "id": c["id"],
@@ -289,7 +289,7 @@ class KnowledgeCell:
     def _err(self, msg):
         sys.stderr.write(f"[{self.cfg['tool']}] {msg}\n")
 
-    # ------------------------- dispatch (argparse compartido) -------------------------
+    # ------------------------- dispatch (shared argparse) -------------------------
 
     def run(self, argv=None):
         cli = self.cfg.get("core_flag_cli", "core")
@@ -331,7 +331,7 @@ class KnowledgeCell:
 
 
 def load_cell(base):
-    """Carga cell.json ubicado junto a la tool (en `base`) y devuelve una KnowledgeCell."""
+    """Load the cell.json next to the tool (in `base`) and return a KnowledgeCell."""
     with open(os.path.join(base, "cell.json"), encoding="utf-8") as f:
         cfg = json.load(f)
     return KnowledgeCell(cfg, base)
