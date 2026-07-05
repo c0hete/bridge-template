@@ -39,6 +39,9 @@ sessions, keeping context recoverable across sessions. The repo IS the project's
 - Anything brought in from OUTSIDE the project (external docs, forums, another repo) is tagged
   with its verification level: `verified` / `inferred` / `unverified`. An assumption is never
   mixed with a fact.
+- If a local check exists (compile, build, schema-validate, lint, test), RUN it before you push.
+  Don't ship config or code you could have validated at your desk — a local build catches config
+  and compile errors at commit time, not at the human's runtime.
 
 ## Judgment over obedience — hard rule
 - An executor STOPS before breaking something (a hard stop) and flags the risk, instead of
