@@ -1,28 +1,55 @@
 # bridge-template
 
-A minimal **bridge**: a coordination hub in a **star topology** for running a project with
-multiple specialized AI sessions, keeping **context recoverable across sessions**. The repo
-IS the project's memory.
+Un **puente**: el hub de coordinación en **topología estrella** para correr un proyecto con varias
+sesiones de IA especializadas, manteniendo el **contexto recuperable entre sesiones**. El repo ES la
+memoria del proyecto.
 
-It doesn't add tooling for its own sake: it starts with **git + a simple discipline**, and
-grows its own tools only once their usefulness is proven (the first: `kcell`, the knowledge
-cell). That's the idea — slow, verified evolution over up-front design.
+## El espíritu (por qué este template es distinto)
 
-## How to use it
-1. Click **"Use this template"** (top of the page) to create your own repo from this base.
-2. Follow `FORK.md` — the checklist for adapting it to your project.
-3. Generate a minimal-scope PAT (this repo only, rotatable).
-4. Run the INITIAL-ANALYZER session (it breaks the project down), then the ORCHESTRATOR.
+No es un andamiaje vacío. Es la **destilación de un puente que funcionó** — sus reglas no se diseñaron
+de entrada, **evolucionaron de cicatrices reales.** Cada regla dura de acá lleva el *por qué* que la
+originó: por qué no usás `git add -A` (coló un archivo rechazado al historial), por qué cada sesión
+trabaja en su propio clone (dos sesiones se pisaron el trabajo), por qué taggeás en origen y no después
+(clasificar por heurística sesga). **Una regla sin su cicatriz se rompe sin entender por qué estaba;**
+por eso las cicatrices viajan con las reglas.
 
-## Core pieces
-- `CONVENTION.md` — the doctrine (the engine): star topology, commit=push, single PLAN, append-only mailboxes, and the hard rules every session inherits.
-- `roles/` — ROLE-ORCHESTRATOR (coordinates), ROLE-EXECUTOR (base template), ROLE-INITIAL-ANALYZER (one-shot bootstrap).
-- `mailbox/` — `to-orchestrator.md` (executors → orchestrator) and `to-executors.md` (orchestrator → executors). Append-only.
-- `docs/PLAN.md` — the single source of truth for project state.
-- `docs/CREDENTIALS-INVENTORY.md` — a credential map (pointers only; the value never lives here).
-- `knowledge/kcell.py` — a recoverable knowledge cell (optional; see `knowledge/README.md`).
-- `prompts/` — bootstrap templates for each session.
+Tres ideas rectoras:
+- **No dupliques git.** Git ya sabe cuándo, qué archivo y qué cambió. El mailbox lleva lo que git NO
+  captura: el razonamiento, la decisión, el porqué.
+- **Nunca sobre supuestos.** Verificá antes de afirmar/decidir/construir. Verificar es barato; un
+  supuesto falso es caro (lo descubrís con medio sistema encima).
+- **Piloteá chico y crecé.** No sobre-diseñes antes de necesitarlo. Las herramientas se ganan su lugar
+  cuando prueban su utilidad, no antes.
 
-## Philosophy
-Pilot small and grow. Don't over-design before you need it. What's specific to your domain
-lives in the hooks marked `[FILL IN ON FORK]`, not in a rewrite of the engine.
+## Cómo se usa
+1. **"Use this template"** (arriba) para crear tu repo desde esta base.
+2. Seguí `FORK.md` — el checklist para adaptarlo a tu proyecto (llenás los hooks `[FILL IN ON FORK]`,
+   NO reescribís el motor).
+3. Generá un PAT de alcance mínimo (solo este repo, `contents:write`, rotable).
+4. Forkeá también un **Canon** (de `canon-template`) — es la memoria de estado entre sesiones.
+5. Corré el ORQUESTADOR: lee el Canon primero, el PLAN después, y coordina a los ejecutores.
+
+## Las piezas
+- `CONVENTION.md` — la doctrina: topología estrella, no-dupliques-git, los 3 metadatos de filtrado
+  (autor/CODE/STATUS), densidad sobre fragmentación, un-clone-por-sesión, commit=push. Las reglas que
+  toda sesión hereda.
+- `roles/ROLE-ORCHESTRATOR.md` — la capa de razonamiento: arranca leyendo el Canon, coordina, gatea lo
+  sensible, valida los tags del usuario (son input, no verdad absoluta), mantiene el lock ni-0-ni-2.
+- `roles/ROLE-EXECUTOR.md` — el manual de inducción del ejecutor: git exacto (con cicatrices), commit=push,
+  secretos por referencia nunca por valor, escala en vez de improvisar.
+- `mailbox/raw/` — `to-orchestrator.md` (ejecutor → orquestador) y `to-executors.md` (orquestador →
+  ejecutor). Append-only. Header: `## [AUTOR->DESTINO · YYYY-MM-DD · CODE: XXX · STATUS: ...]`.
+- `docs/PLAN.md` — el estado actual del proyecto (el orquestador lo mantiene fresco).
+- `docs/CREDENTIALS-INVENTORY.md` — mapa de credenciales (punteros; el valor NUNCA vive acá).
+- `knowledge/kcell.py` — celda de conocimiento recuperable (opcional).
+
+## Dos memorias, distintas
+- **PLAN** (acá) = estado ACTUAL, fresco, sobreescribible. "¿Dónde estamos hoy?"
+- **Canon** (repo aparte, de `canon-template`) = TRAYECTORIA con fechas ancladas. "¿Cómo y por qué
+  llegamos acá?" El orquestador lo lee primero al arrancar; es su memoria entre resets.
+
+## Seguridad de base
+- Topología estrella: los ejecutores hablan solo con el orquestador, nunca entre sí.
+- Secretos: nunca en un commit, en el mailbox, ni en el chat. Solo punteros (archivo + variable).
+- Gates: lo destructivo/irreversible/hacia-afuera espera OK humano.
+- PAT de alcance mínimo y rotable — asumí que puede quedar expuesto en un transcript.
