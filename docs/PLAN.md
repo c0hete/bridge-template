@@ -16,3 +16,8 @@
 
 ## Project timeline (meta)
 - YYYY-MM-DD: repo created from bridge-template, skeleton seeded.
+
+## Nota sobre el Canon (estado entre sesiones)
+El PLAN es el estado FRESCO del proyecto. Para la memoria entre sesiones (hitos, decisiones, divergencias
+con fechas ancladas) usá un Canon en su repo propio (forkeá `canon-template`). El orquestador lee el Canon
+PRIMERO al arrancar (ver ROLE-ORCHESTRATOR). PLAN = estado actual; Canon = trayectoria + read model.

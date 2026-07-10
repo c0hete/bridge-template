@@ -1,89 +1,65 @@
-# BRIDGE CONVENTION — [PROJECT NAME]
+# CONVENTION — la doctrina del puente
 
-## What it is
-A coordination hub in a star topology for running this project with multiple specialized AI
-sessions, keeping context recoverable across sessions. The repo IS the project's memory.
+> Corta a propósito. La simpleza es lo que hace que el sistema funcione. Cada regla nació de una cicatriz
+> real; se refuerza de acá en adelante, NO se aplica retroactivamente.
 
-## Topology (star) — hard rule
-- Executors talk ONLY to the ORCHESTRATOR. Never to each other.
-- The ORCHESTRATOR is the only one who sees every front and routes the cross-cutting items.
-- An executor that needs something from another front asks the orchestrator for it.
+## Topología estrella
+Un ORQUESTADOR central; N ejecutores que hablan SOLO con él, nunca entre sí. La coordinación cruzada pasa
+siempre por el centro. (Detalle en `roles/ROLE-ORCHESTRATOR.md`.)
 
-## Mailboxes (append-only)
-- `mailbox/to-orchestrator.md` -> uplink: executors WRITE to the orchestrator.
-- `mailbox/to-executors.md`    -> downlink: the orchestrator WRITES to the executors.
-- A message is never rewritten or deleted. You only append at the end.
-- Message format:
-  `## [FROM->TO · YYYY-MM-DD (topic)] title`
-  body...
-  `[FROM]`  (signature at the close)
+## Principio rector: no dupliques git
+Git ya sabe **cuándo** (timestamp), **qué archivo** y **qué cambió** (diff), con precisión perfecta. El
+mailbox NO repite eso. El mailbox lleva lo que git NO captura: **el razonamiento, la decisión, el porqué.**
 
-## Operational integrity — hard rule (commit=push)
-- Every change is ONE atomic cycle, IN THIS ORDER:
-  `git add -A && git commit -m "..."`  ->  `git pull --rebase`  ->  `git push`.
-- COMMIT BEFORE YOU PULL. `git pull --rebase` with unstaged changes fails ("cannot pull with
-  rebase: you have unstaged changes"). Commit your work first, rebase it on top of the remote,
-  then push. Pulling first only works when the tree is already clean.
-- If it isn't pushed, it doesn't exist. Local work left unpushed STALLS the whole star
-  without anyone knowing why. That's why it's a hard rule, not a suggestion.
+## Los 3 metadatos que SÍ habilitan filtrado (git no los da)
+Todo mensaje abre con un header ASCII grep-safe (sin acentos):
+```
+## [AUTOR->DESTINO · YYYY-MM-DD · CODE: XXX[,YYY] · STATUS: ...]
+```
+1. **Clave de interlocutor** — `[ORQUESTADOR->EJECUTOR:<apellido>]`, `[EJECUTOR:<apellido>->ORQUESTADOR]`,
+   `[...->ALL]`. Filtrás por quién habla a quién.
+2. **Tema / CODE** — la tarea o frente. Campo de primera clase. Si tu proyecto define códigos, van en
+   `docs/INDICE-TEMAS.md`. Si ninguno encaja: `MISC` (imprecisión deliberada, filtrable). Nunca sin nada.
+3. **STATUS** — `DONE` / `IN-PROGRESS` / `BLOCKED` / `REQUIRES-ORQUESTADOR` / `REQUIRES-USUARIO`.
 
-## PLAN as the single source of truth
-- `docs/PLAN.md` is the ONLY source of truth for project state.
-- On any conflict between a chat and the PLAN, the PLAN wins.
-- A fresh session gets up to speed by reading the PLAN, not by re-reading the message history.
-- The orchestrator keeps it current.
+**Quién taggea:** cada autor el suyo AL ESCRIBIR (en origen, autoritativo). Cicatriz: clasificar por
+heurística DESPUÉS adivina y sesga; taggear en origen es determinístico.
 
-## Observe, don't guess — hard rule
-- You diagnose by REPRODUCING or MEASURING, not by assuming. You verify against the real
-  source (the code, the log, the config, the data) BEFORE asserting anything.
-- Anything brought in from OUTSIDE the project (external docs, forums, another repo) is tagged
-  with its verification level: `verified` / `inferred` / `unverified`. An assumption is never
-  mixed with a fact.
-- If a local check exists (compile, build, schema-validate, lint, test), RUN it before you push.
-  Don't ship config or code you could have validated at your desk — a local build catches config
-  and compile errors at commit time, not at the human's runtime.
+## Puntero de archivo: mínimo, no exacto
+Un puntero corto para saber dónde mirar ("está en `knowledge/`") sí; la ruta con línea (`.../x.py:142`) no
+— eso lo da git. El mailbox orienta; git precisa.
 
-## Judgment over obedience — hard rule
-- An executor STOPS before breaking something (a hard stop) and flags the risk, instead of
-  executing blindly.
-- If an order looks like it will break something, or isn't safe, you halt and tell the
-  orchestrator — you don't run it and break things. Genuine judgment is valued over literal
-  compliance.
-- This is distinct from Gates: Gates say WHICH actions wait for a human OK; this rule is about
-  HOW an executor behaves in the face of any order.
+## Densidad sobre fragmentación
+**Un mensaje = una unidad de trabajo con su decisión.** No fragmentes una tarea en diez mensajes. Mejor uno
+denso y auto-contenido que cinco cortos.
 
-## Shared resource = one turn at a time — hard rule
-- If several sessions share a MUTABLE resource (Docker, a database, a working tree, a state
-  file), only ONE touches it at a time. The orchestrator sequences the turns.
-- Check that the resource is free before taking it (don't assume). Release it when done.
+## Dos lugares, no diez
+- `docs/PLAN.md` = índice maestro, "estado actual" siempre fresco. Si algo afecta el estado, va acá.
+- `mailbox/raw/*` = registro histórico append-only. Lo que es historia queda acá.
+Si importa para el estado → PLAN. Si es historia → mailbox. Nada de un tercer lugar.
+(Y para el estado entre sesiones existe el Canon, en su repo propio — ver ROLE-ORCHESTRATOR.)
 
-## Secrets — hard rule
-- The bridge is a git repo: the VALUE of a secret NEVER goes in it, only its POINTER.
-- The credential map lives in `docs/CREDENTIALS-INVENTORY.md` (pointers only); the values live
-  in a secrets manager or the server-side `.env`. Secret handoffs happen OUT OF BAND, not
-  through the bridge.
-- A PAT/token is stored ONLY via the wake-up script's hidden input. NEVER write `.env` with the
-  token value in a visible command, never paste it into a file inline, never print it. Never
-  embed it in a remote URL; use a credential helper, or if you must embed it for one clone, scrub
-  it immediately with `git remote set-url origin <clean-url>`. The value must never appear in
-  command output, a transcript, or a committed file.
+## Un clone por sesión concurrente
+Cicatriz real: varias sesiones sobre el MISMO clone local se pisaron el WIP (una tapó el trabajo de otra).
+Regla: **cada sesión ejecutora concurrente trabaja en SU PROPIO clone** (o un `git worktree` por apellido).
+El remoto es el punto de encuentro, no la carpeta local. Si encontrás WIP ajeno en un working tree
+compartido heredado: stash → pull → pop (preservar, nunca descartar lo ajeno), avisar por mailbox, migrar a
+tu propio clone. Commit+push ANTES de ceder la sesión (el WIP local es invisible para todos).
 
 ## Domain integrity — hard rule   [FILL IN ON FORK]
-> Every domain has ONE integrity rule that isn't up for negotiation. Write yours here.
-> Real examples from other bridges:
->  - Game server: "economic actions get double-reviewed (spec -> review -> human OK)".
->  - Legal case: "every piece of evidence carries source+date+custody; fact is kept separate
->    from interpretation; a missing data point is never fabricated or filled in".
->  - Infra: "production changes require the owner present; nothing destructive without a backup".
-> (Replace this block with your rule. If your project seems to have none, look again: there's always one.)
+> Cada dominio tiene UNA regla de integridad no negociable. Escribí la tuya.
+> Ejemplos de otros puentes:
+>  - Servidor de juego: "las acciones económicas se revisan doble (spec -> review -> OK humano)".
+>  - Caso legal: "cada evidencia con fuente+fecha+custodia; el hecho se separa de la interpretación".
+>  - Infra/producto: "los cambios a producción requieren al owner presente".
+>  - Herramienta con automatización: "NUNCA trabajar sobre supuestos; verificar, no asumir".
+> (Reemplazá este bloque con tu regla. Si parece que no tenés ninguna, mirá de nuevo: siempre hay una.)
 
 ## Gates   [FILL IN ON FORK]
-- Sensitive, irreversible, or outward-facing actions are marked `[HUMAN]` and wait for an OK.
-- List here which ones apply to your domain (e.g. publishing, deploying to prod, contacting
-  someone, deleting data, spending money).
+- Acciones sensibles, irreversibles o hacia afuera se marcan `[HUMAN]` y esperan OK del usuario.
+- Listá las de tu dominio (ej. publicar, deploy a prod, contactar a alguien, borrar datos, gastar dinero,
+  encender automatización, tocar archivos con secretos).
 
-## Bootstrap doctrine
-- Pilot small and grow. Don't over-design before you need it.
-- Each session, on opening, reads its ROLE + this file + the PLAN -> it's up to speed.
-- The ORCHESTRATOR is rotated when it starts making formatting errors (a sign of a saturated
-  context, not that it broke): a fresh session gets up to speed by reading the PLAN.
+## Commit = push, verificado
+Un commit sin push no existe y traba la cola. El ciclo es atómico: `pull --rebase` → editar → commit →
+`push` confirmado. Nada pudriéndose en local.
