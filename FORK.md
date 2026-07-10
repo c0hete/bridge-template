@@ -16,6 +16,9 @@ What's NOT here (the engine) isn't touched; you only fill in the hooks.
       domain and must wait for a human OK.
 
 ## 3. Define your roles
+- [ ] (Opcional) `roles/ROLE-DOCUMENTALIST.md` es un rol a demanda para destilar estado y hacer
+      arqueología de git (desempolvar cómo evolucionó algo). No requiere fork; se usa cuando lo necesitás.
+      Llená su hook si tu proyecto tiene conocimiento indexado que deba consultar.
 - [ ] Duplicate `roles/ROLE-EXECUTOR.md` once per front of your project and specialize it
       (e.g. ROLE-EMAIL, ROLE-SERVER, ROLE-WRITER...). ROLE-EXECUTOR is the base template.
 - [ ] Adjust `roles/ROLE-ORCHESTRATOR.md` only if your project needs something special (usually not).

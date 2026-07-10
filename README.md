@@ -37,6 +37,8 @@ Tres ideas rectoras:
   sensible, valida los tags del usuario (son input, no verdad absoluta), mantiene el lock ni-0-ni-2.
 - `roles/ROLE-EXECUTOR.md` — el manual de inducción del ejecutor: git exacto (con cicatrices), commit=push,
   secretos por referencia nunca por valor, escala en vez de improvisar.
+- `roles/ROLE-DOCUMENTALIST.md` — rol a demanda (opcional): destila estado (foto) y evolución
+  histórica vía arqueología de git (película). No toca el flujo diario.
 - `mailbox/raw/` — `to-orchestrator.md` (ejecutor → orquestador) y `to-executors.md` (orquestador →
   ejecutor). Append-only. Header: `## [AUTOR->DESTINO · YYYY-MM-DD · CODE: XXX · STATUS: ...]`.
 - `docs/PLAN.md` — el estado actual del proyecto (el orquestador lo mantiene fresco).
